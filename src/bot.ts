@@ -1,75 +1,95 @@
 import fs from "fs";
 import { Client, Collection } from "discord.js"
-import { Command, BotSettings, Component } from "./interfaces";
+import { Command, BotSettings, Component, RequireDirectoryOptions, RequireDirectoryModules } from "./interfaces";
 
 export default class Bot {
     private client: Client;
-    private commands: Collection<string, Command>;
+    private commands: Collection<string, Command> = new Collection();;
     private components: Map<string, any> = new Map();
-    private prefix: string;
+    readonly prefix: string;
 
     constructor(settings: BotSettings, clientOptions?: object) {
         this.client = new Client(clientOptions);
-        this.commands = new Collection();
         this.prefix = settings.prefix;
     }
 
-    public init(cmdDir: Array<string>, eventsDir: string, token: string) {
+    public init(cmdDir: string, eventsDir: string, token: string) {
         if (token === "undefined") return console.log("An invalid token was provided");
         this.loadCommands(cmdDir);
+        console.log(this.commands);
         this.loadEvents(eventsDir);
         this.client.login(token);
     }
 
-    public getPrefix(): string {
-        return this.prefix;
-    }
+    public loadComponents(path: string) {
+        const components = this.requireDirectory(path, {
+            recursive: true,
+            filter: /^component\.js$/
+        })
+        console.log(components);
 
-    public getCommands(): Collection<string, Command> {
-        return this.commands;
-    }
+        // const contents = fs.readdirSync(path);
 
-    public registerComponent(components: Component | Array<Component>) {
-        if (Array.isArray(components))
-            components.forEach(component =>
-                this.components.set(component.name, component))
-        else
-            this.components.set(components.name, components)
+        // console.log(contents);
+        // contents.forEach(file => {
+        //     const component: Component = require(`${path}/${file}`);
+        //     this.components.set(component.name, component);
+        // })
     }
 
     public getComponent(name: string) {
         return this.components.get(name);
     }
 
-    private loadCommands(paths: Array<string>) {
-        paths.forEach(path => {
-            const contents = fs.readdirSync(path);
+    private loadCommands(path: string) {
+        const commands = this.requireDirectory(path, {
+            recursive: true
+        });
 
-            const jsFiles = [...contents.filter(cmd => cmd.endsWith(".js"))]
-            const subFolders = [...contents.filter(cmd => !cmd.match(/\..+/))];
-            const subDirs = subFolders.map(dir => `${path}/${dir}`);
+        for (const [name, module] of Object.entries(commands)) {
+            this.commands.set(name, module.default);
+        }
+    }
 
-            for (const file of jsFiles) {
-                const cmd: Command = require(`${path}/${file}`).default;
-                this.commands.set(file.split(".")[0], cmd);
-            }
-
-            if (subDirs) this.loadCommands(subDirs)
-        })
+    public getCommands(): Collection<string, Command> {
+        return this.commands;
     }
 
     private loadEvents(path: string) {
-        const contents = fs.readdirSync(path);
-        const validEvents = [
-            ...contents
-                .filter(item => item.endsWith(".js"))
-                .map(event => event.split(".")[0])
-        ];
+        const events = this.requireDirectory(path, {
+            recursive: true
+        });
 
-        for (const event of validEvents) {
-            const eventFile = require(`./events/${event}`).default;
-            this.client.on(event, eventFile.bind(null, this));
-            delete require.cache[require.resolve(`./events/${event}`)];
+        console.log(events);
+
+        for (const [eventName, event] of Object.entries(events)) {
+            this.client.on(eventName, event.default.bind(null, this));
+            delete require.cache[require.resolve(`./events/${eventName}`)];
         }
+    }
+
+    private requireDirectory(path: string, options?: RequireDirectoryOptions): RequireDirectoryModules {
+        const modules: RequireDirectoryModules = {};
+
+        function readDir(dir: string) {
+            const contents = fs.readdirSync(dir);
+
+            const files = contents
+                .filter(item => fs.lstatSync(`${dir}/${item}`).isFile())
+                .filter(item => item.match(options?.filter || /.+/))
+
+            const subDirs = contents
+                .filter(item => fs.lstatSync(`${dir}/${item}`).isDirectory())
+                .map(folder => `${dir}/${folder}`);
+
+            if (files.length)
+                files.forEach(file => modules[file.split(".")[0]] = require(`${dir}/${file}`))
+
+            if (options?.recursive && subDirs.length) subDirs.forEach(sub => readDir(sub))
+        }
+
+        readDir(path);
+
+        return modules;
     }
 }

@@ -1,4 +1,23 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35,33 +54,46 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-var discord_js_1 = require("discord.js");
-exports.default = {
-    run: function (bot, message) {
-        return __awaiter(this, void 0, void 0, function () {
-            var channels;
-            return __generator(this, function (_a) {
-                channels = message.mentions.channels.map(function (channel) { return channel.id; });
-                channels.forEach(function (channel) {
-                });
-                return [2 /*return*/];
-            });
-        });
-    },
-    meetsRequirements: function (message) {
-        var _a;
+var fs_1 = __importDefault(require("fs"));
+var database = __importStar(require("./ConditionDatabase"));
+var ConditionHandler = /** @class */ (function () {
+    function ConditionHandler(path) {
+        this.name = "ConditionHandler";
+        this.conditions = new Map();
+        console.log(path);
+        var contents = fs_1.default.readdirSync(path);
+        var validConditions = __spreadArrays(contents.filter(function (file) { return file.endsWith(".js"); })
+            .map(function (file) { return require(path + "/" + file.split(".js")[0]); }));
+        for (var _i = 0, validConditions_1 = validConditions; _i < validConditions_1.length; _i++) {
+            var condition = validConditions_1[_i];
+            this.conditions.set(condition.name, condition.exec);
+        }
+    }
+    ConditionHandler.prototype.handleConditions = function (guildID, channelID) {
         return __awaiter(this, void 0, void 0, function () {
             var conditions;
-            return __generator(this, function (_b) {
-                conditions = [
-                    (_a = message.member) === null || _a === void 0 ? void 0 : _a.hasPermission(this.permission),
-                    message.mentions.channels.size > 0
-                ];
-                return [2 /*return*/, conditions.every(function (c) { return c === true; })];
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, database.getChannelConditions(guildID, channelID)];
+                    case 1:
+                        conditions = _a.sent();
+                        this.conditions;
+                        return [2 /*return*/];
+                }
             });
         });
-    },
-    usage: "...<#channels>",
-    permission: discord_js_1.Permissions.FLAGS.MANAGE_CHANNELS
-};
+    };
+    return ConditionHandler;
+}());
+exports.default = new ConditionHandler("./conditions");

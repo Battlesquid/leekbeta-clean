@@ -14,7 +14,8 @@
     "discord.js": "^12.2.0",
     "dotenv": "^8.2.0",
     "firebase-admin": "^8.12.1",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.1",
+    "require-all": "^3.0.0"
   },
   "devDependencies": {
     "eslint": "^7.7.0",

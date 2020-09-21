@@ -26,4 +26,5 @@ var env = __importStar(require("dotenv"));
 env.config({ path: "../.env" });
 var bot_1 = __importDefault(require("./bot"));
 var leekbot = new bot_1.default({ prefix: ";" });
-leekbot.init(["./commands"], "./events", process.env.TOKEN || "undefined");
+leekbot.loadComponents("./components");
+leekbot.init("./commands", "./events", process.env.TOKEN || "undefined");

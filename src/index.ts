@@ -4,4 +4,5 @@ env.config({ path: "../.env" });
 import Bot from "./bot";
 
 const leekbot = new Bot({ prefix: ";" });
-leekbot.init(["./commands"], "./events", process.env.TOKEN || "undefined");
+leekbot.loadComponents("./components");
+leekbot.init("./commands", "./events", process.env.TOKEN || "undefined");

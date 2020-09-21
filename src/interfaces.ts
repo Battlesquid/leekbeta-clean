@@ -14,10 +14,20 @@ export interface BotSettings {
 export interface Condition {
     name: string
     event: string
-    trigger(): void
+    exec(): void
 }
 
 export interface Component {
     name: string
     init(...args: any[]): any
+    props: any
+}
+
+export interface RequireDirectoryOptions {
+    recursive?: boolean
+    filter?: RegExp
+}
+
+export interface RequireDirectoryModules {
+    [key: string]: any
 }

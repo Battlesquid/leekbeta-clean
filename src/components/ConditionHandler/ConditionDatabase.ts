@@ -1,11 +1,10 @@
 import { BitField } from "discord.js"
-import FLAGS from "./static/flags";
+import FLAGS from "../../static/flags";
 import * as admin from "firebase-admin";
 admin.initializeApp({
     credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_AUTH || ""))
 });
 const database = admin.firestore();
-
 
 const getBitField = async (guild: string, channel: string): Promise<BitField<string>> => {
     const doc = database

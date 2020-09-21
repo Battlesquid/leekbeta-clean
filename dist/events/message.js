@@ -44,13 +44,13 @@ exports.default = (function (bot, message) { return __awaiter(void 0, void 0, vo
             case 0:
                 if (message.author.bot || ((_b = message.guild) === null || _b === void 0 ? void 0 : _b.id) === undefined)
                     return [2 /*return*/];
-                return [4 /*yield*/, bot.handleConditions((_c = message.guild) === null || _c === void 0 ? void 0 : _c.id, message.channel.id)];
+                return [4 /*yield*/, bot.getComponent("ConditionHandler").handleConditions((_c = message.guild) === null || _c === void 0 ? void 0 : _c.id, message.channel.id)];
             case 1:
                 _d.sent();
-                if (!message.content.startsWith(bot.getPrefix()))
+                if (!message.content.startsWith(bot.prefix))
                     return [2 /*return*/];
                 _a = message.content
-                    .slice(bot.getPrefix().length)
+                    .slice(bot.prefix.length)
                     .trim()
                     .split(/\s/g), commandName = _a[0], args = _a.slice(1);
                 command = bot.getCommands().get(commandName);
