@@ -22,9 +22,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var env = __importStar(require("dotenv"));
+const env = __importStar(require("dotenv"));
 env.config({ path: "../.env" });
-var bot_1 = __importDefault(require("./bot"));
-var leekbot = new bot_1.default({ prefix: ";" });
-leekbot.loadComponents("./components");
-leekbot.init("./commands", "./events", process.env.TOKEN || "undefined");
+const bot_1 = __importDefault(require("./bot"));
+const leekbot = new bot_1.default({ prefix: ";" });
+leekbot.loadComponents("components", /^component\.js$/);
+leekbot.init("commands", "events", process.env.TOKEN || "undefined");

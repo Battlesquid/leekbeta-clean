@@ -1,9 +1,9 @@
 import { Message } from "discord.js";
-import Bot from "../bot";
+import Bot from "../LeekbotClient";
 
 export default async (bot: Bot, message: Message) => {
-    if (message.author.bot || message.guild?.id === undefined) return;
-    await bot.getComponent("ConditionHandler").handleConditions(message.guild?.id, message.channel.id);
+    if (message.author.bot === undefined || !message.guild) return;
+    await bot.getComponent("ConditionHandler").handleConditions("message", message.guild.id, message.channel.id, message);
 
     if (!message.content.startsWith(bot.prefix)) return;
 

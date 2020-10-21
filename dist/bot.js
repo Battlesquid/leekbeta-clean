@@ -1,83 +1,110 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var fs_1 = __importDefault(require("fs"));
-var discord_js_1 = require("discord.js");
-var Bot = /** @class */ (function () {
-    function Bot(settings, clientOptions) {
+const fs_1 = __importDefault(require("fs"));
+const discord_js_1 = require("discord.js");
+const _path = __importStar(require("path"));
+class Bot extends discord_js_1.Client {
+    constructor(settings, clientOptions) {
+        super(clientOptions);
         this.commands = new discord_js_1.Collection();
         this.components = new Map();
-        this.client = new discord_js_1.Client(clientOptions);
         this.prefix = settings.prefix;
     }
     ;
-    Bot.prototype.init = function (cmdDir, eventsDir, token) {
+    init(cmdDir, eventsDir, token) {
         if (token === "undefined")
             return console.log("An invalid token was provided");
         this.loadCommands(cmdDir);
         console.log(this.commands);
         this.loadEvents(eventsDir);
-        this.client.login(token);
-    };
-    Bot.prototype.loadComponents = function (path) {
-        var components = this.requireDirectory(path, {
+        this.login(token);
+    }
+    loadComponents(path, match) {
+        const components = this.requireDirectory(path, {
             recursive: true,
-            filter: /^component\.js$/
+            filter: match
         });
-        console.log(components);
+        for (const [key, value] of Object.entries(components)) {
+            value.default ?
+                this.components.set(value.default.name, value.default) :
+                this.components.set(value.name, value);
+        }
+        console.log(this.components);
         // const contents = fs.readdirSync(path);
         // console.log(contents);
         // contents.forEach(file => {
         //     const component: Component = require(`${path}/${file}`);
         //     this.components.set(component.name, component);
         // })
-    };
-    Bot.prototype.getComponent = function (name) {
+    }
+    getComponent(name) {
         return this.components.get(name);
-    };
-    Bot.prototype.loadCommands = function (path) {
-        var commands = this.requireDirectory(path, {
+    }
+    loadCommands(path) {
+        const commands = this.requireDirectory(path, {
             recursive: true
         });
-        for (var _i = 0, _a = Object.entries(commands); _i < _a.length; _i++) {
-            var _b = _a[_i], name_1 = _b[0], module_1 = _b[1];
-            this.commands.set(name_1, module_1.default);
+        for (const [name, command] of Object.entries(commands)) {
+            this.commands.set(name, command.default);
         }
-    };
-    Bot.prototype.getCommands = function () {
+    }
+    getCommands() {
         return this.commands;
-    };
-    Bot.prototype.loadEvents = function (path) {
-        var events = this.requireDirectory(path, {
+    }
+    loadEvents(path) {
+        const events = this.requireDirectory(path, {
             recursive: true
         });
-        console.log(events);
-        for (var _i = 0, _a = Object.entries(events); _i < _a.length; _i++) {
-            var _b = _a[_i], eventName = _b[0], event_1 = _b[1];
-            this.client.on(eventName, event_1.default.bind(null, this));
-            delete require.cache[require.resolve("./events/" + eventName)];
+        for (const [eventName, event] of Object.entries(events)) {
+            this.on(eventName, event.default.bind(null, this));
+            delete require.cache[require.resolve(`./events/${eventName}`)];
         }
-    };
-    Bot.prototype.requireDirectory = function (path, options) {
-        var modules = {};
+    }
+    requireDirectory(path, options) {
+        const modules = {};
         function readDir(dir) {
-            var contents = fs_1.default.readdirSync(dir);
-            var files = contents
-                .filter(function (item) { return fs_1.default.lstatSync(dir + "/" + item).isFile(); })
-                .filter(function (item) { return item.match((options === null || options === void 0 ? void 0 : options.filter) || /.+/); });
-            var subDirs = contents
-                .filter(function (item) { return fs_1.default.lstatSync(dir + "/" + item).isDirectory(); })
-                .map(function (folder) { return dir + "/" + folder; });
-            if (files.length)
-                files.forEach(function (file) { return modules[file.split(".")[0]] = require(dir + "/" + file); });
+            const resolvedDir = _path.resolve(".", dir);
+            const contents = fs_1.default.readdirSync(resolvedDir);
+            const files = contents
+                .filter(item => fs_1.default.lstatSync(`${resolvedDir}/${item}`).isFile())
+                .filter(item => item.match((options === null || options === void 0 ? void 0 : options.filter) || /.+/))
+                .map((file, index, filesArray) => {
+                const length = filesArray.filter(x => x === file).length - filesArray.slice(index).filter(x => x === file).length;
+                return length > 0 ? file + length : file;
+            }); // prevent duplicates
+            const subDirs = contents
+                .filter(item => fs_1.default.lstatSync(`${resolvedDir}/${item}`).isDirectory())
+                .map(folder => `${dir}/${folder}`);
+            if (files.length) {
+                files.forEach(file => modules[file.split(".")[0]] = require(`${resolvedDir}/${file}`));
+            }
             if ((options === null || options === void 0 ? void 0 : options.recursive) && subDirs.length)
-                subDirs.forEach(function (sub) { return readDir(sub); });
+                subDirs.forEach(sub => readDir(sub));
         }
         readDir(path);
         return modules;
-    };
-    return Bot;
-}());
+    }
+}
 exports.default = Bot;

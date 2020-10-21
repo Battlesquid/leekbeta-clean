@@ -1,52 +1,42 @@
-import { BitField } from "discord.js"
-import FLAGS from "../../static/flags";
-import * as admin from "firebase-admin";
-admin.initializeApp({
-    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_AUTH || ""))
-});
-const database = admin.firestore();
+import ConditionBitField from "./ConditionBitField";
+import { database } from "../../util/database"
 
-const getBitField = async (guild: string, channel: string): Promise<BitField<string>> => {
-    const doc = database
-        .collection("conditions")
-        .doc(guild);
-
-    const snapshot = await doc.get();
+const getBitField = async (guild: string, channel: string): Promise<ConditionBitField> => {
+    const snapshot = await database.get("conditions", guild);
 
     const bits = snapshot.data()?.[channel] || 0;
-    const bitfield = new BitField(bits);
+    const bitfield = new ConditionBitField(bits);
+
     return bitfield;
 }
 
-export const getChannelConditions = async (guild: string, channel: string): Promise<void> => {
-    const doc = await database
-        .collection("conditions")
-        .doc(guild);
-    const snapshot = await doc.get();
+export const getChannelConditions = async (guild: string, channel: string): Promise<Array<string> | undefined> => {
+    const snapshot = await database.get("conditions", guild);
 
-    const bits = snapshot.data()?.[channel];
-    const bitfield = new BitField(bits);
-    console.log(bitfield.serialize());
+    const bits: number = snapshot.data()?.[channel];
+
+    const bitfield = new ConditionBitField(bits);
+    const serializedField = bitfield.serialize();
+
+    return Object.keys(serializedField).filter(key => serializedField[key]);
+
 }
 
 export const addCondition = async (guild: string, channel: string, condition: string): Promise<void> => {
     const bits = await getBitField(guild, channel);
-    bits.add(FLAGS[condition]);
+    bits.add(ConditionBitField.FLAGS[condition.toLowerCase()]);
 
-    const doc = database
-        .collection("conditions")
-        .doc(guild);
-
-    await doc.set({ [channel]: bits })
+    await database.set("conditions", guild, { [channel]: bits })
 }
 
 export const removeCondition = async (guild: string, channel: string, condition: string): Promise<void> => {
+    if (!ConditionBitField.FLAGS[condition.toLowerCase()]) return;
+
     const bits = await getBitField(guild, channel)
-    bits.remove(FLAGS[condition])
+    bits.remove(ConditionBitField.FLAGS[condition.toLowerCase()])
 
-    const doc = database
-        .collection("conditions")
-        .doc(guild)
-
-    await doc.set({ [channel]: bits })
+    if (bits.bitfield !== 0)
+        await database.set("conditions", guild, { [channel]: bits })
+    else
+        await database.remove("conditions", guild, channel)
 }

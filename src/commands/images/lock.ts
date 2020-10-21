@@ -1,5 +1,5 @@
 import { Message, Permissions } from "discord.js";
-import Bot from "../../bot";
+import Bot from "../../LeekbotClient";
 
 export default {
     async run(bot: Bot, message: Message) {

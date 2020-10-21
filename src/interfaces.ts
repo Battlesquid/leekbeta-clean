@@ -25,7 +25,8 @@ export interface Component {
 
 export interface RequireDirectoryOptions {
     recursive?: boolean
-    filter?: RegExp
+    filter?: RegExp | string
+    default?: boolean
 }
 
 export interface RequireDirectoryModules {
