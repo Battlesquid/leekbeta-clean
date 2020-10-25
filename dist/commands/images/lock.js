@@ -11,21 +11,24 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 exports.default = {
-    run(bot, message) {
+    run(bot, message, args) {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            const channels = message.mentions.channels.map(channel => channel.id);
-            channels.forEach(channel => {
-            });
+            const channelIDs = message.mentions.channels.map(channel => channel.id);
+            if (!channelIDs)
+                return;
+            const conditionDB = bot.getComponent("ConditionHandler").database;
+            conditionDB.batchAddCondition((_a = message.guild) === null || _a === void 0 ? void 0 : _a.id, channelIDs, "locked");
         });
     },
     meetsRequirements(message) {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            const conditions = [
+            const requirements = [
                 (_a = message.member) === null || _a === void 0 ? void 0 : _a.hasPermission(this.permission),
                 message.mentions.channels.size > 0
             ];
-            return conditions.every(c => c === true);
+            return requirements.every(Boolean);
         });
     },
     usage: "...<#channels>",

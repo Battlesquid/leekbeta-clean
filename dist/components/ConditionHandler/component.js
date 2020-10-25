@@ -32,12 +32,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
-const database = __importStar(require("./ConditionDatabase"));
 const path_1 = __importDefault(require("path"));
+const database = __importStar(require("./ConditionDatabase"));
+const conditions_1 = __importDefault(require("./conditions"));
 class ConditionHandler {
     constructor(dir) {
         this.name = "ConditionHandler";
         this.conditions = new Map();
+        this.database = database;
         const resolvedDir = path_1.default.resolve(__dirname, dir);
         const contents = fs_1.default.readdirSync(resolvedDir);
         const validConditions = contents.filter(file => file.endsWith(".js"))
@@ -48,11 +50,17 @@ class ConditionHandler {
                 this.conditions.set(condition.name, condition);
         }
     }
-    handleConditions(event, guildID, channelID) {
+    handleConditions(event, guildID, channelID, ...params) {
         return __awaiter(this, void 0, void 0, function* () {
-            const conditions = yield database.getChannelConditions(guildID, channelID);
-            console.log(conditions);
-            // this.conditions
+            const validConditions = yield database.getChannelConditions(guildID, channelID);
+            if (!validConditions)
+                return;
+            for (const condition of validConditions) {
+                const action = conditions_1.default.get(event)[condition.toLowerCase()];
+                if (!action)
+                    continue;
+                action(params);
+            }
         });
     }
 }

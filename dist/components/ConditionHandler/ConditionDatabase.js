@@ -1,23 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -31,30 +12,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.removeCondition = exports.addCondition = exports.getChannelConditions = void 0;
-require("./ConditionBitField");
-const admin = __importStar(require("firebase-admin"));
+exports.removeCondition = exports.batchAddCondition = exports.addCondition = exports.getChannelConditions = void 0;
 const ConditionBitField_1 = __importDefault(require("./ConditionBitField"));
-admin.initializeApp({
-    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_AUTH || ""))
-});
-const database = admin.firestore();
+const database_1 = __importDefault(require("../../util/database"));
 const getBitField = (guild, channel) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const doc = database
-        .collection("conditions")
-        .doc(guild);
-    const snapshot = yield doc.get();
+    const snapshot = yield database_1.default.get("conditions", guild);
     const bits = ((_a = snapshot.data()) === null || _a === void 0 ? void 0 : _a[channel]) || 0;
     const bitfield = new ConditionBitField_1.default(bits);
     return bitfield;
 });
 exports.getChannelConditions = (guild, channel) => __awaiter(void 0, void 0, void 0, function* () {
     var _b;
-    const doc = yield database
-        .collection("conditions")
-        .doc(guild);
-    const snapshot = yield doc.get();
+    const snapshot = yield database_1.default.get("conditions", guild);
     const bits = (_b = snapshot.data()) === null || _b === void 0 ? void 0 : _b[channel];
     const bitfield = new ConditionBitField_1.default(bits);
     const serializedField = bitfield.serialize();
@@ -62,17 +32,26 @@ exports.getChannelConditions = (guild, channel) => __awaiter(void 0, void 0, voi
 });
 exports.addCondition = (guild, channel, condition) => __awaiter(void 0, void 0, void 0, function* () {
     const bits = yield getBitField(guild, channel);
-    bits.add(FLAGS[condition]);
-    const doc = database
-        .collection("conditions")
-        .doc(guild);
-    yield doc.set({ [channel]: bits });
+    bits.add(ConditionBitField_1.default.FLAGS[condition.toUpperCase()]);
+    yield database_1.default.set("conditions", guild, { [channel]: bits.bitfield });
+});
+exports.batchAddCondition = (guild, channels, condition) => __awaiter(void 0, void 0, void 0, function* () {
+    const data = {};
+    for (const channel of channels) {
+        console.log(channel);
+        const bits = yield getBitField(guild, channel);
+        bits.add(ConditionBitField_1.default.FLAGS[condition.toUpperCase()]);
+        data[channel] = bits.bitfield;
+    }
+    database_1.default.set("conditions", guild, data);
 });
 exports.removeCondition = (guild, channel, condition) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!ConditionBitField_1.default.FLAGS[condition.toLowerCase()])
+        return;
     const bits = yield getBitField(guild, channel);
-    bits.remove(FLAGS[condition]);
-    const doc = database
-        .collection("conditions")
-        .doc(guild);
-    yield doc.set({ [channel]: bits });
+    bits.remove(ConditionBitField_1.default.FLAGS[condition.toUpperCase()]);
+    if (bits.bitfield !== 0)
+        yield database_1.default.set("conditions", guild, { [channel]: bits.bitfield });
+    else
+        yield database_1.default.remove("conditions", guild, channel);
 });

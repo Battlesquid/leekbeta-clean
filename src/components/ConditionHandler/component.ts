@@ -1,11 +1,12 @@
 import fs from "fs";
-import * as database from "./ConditionDatabase";
-import Conditions, * as ConditionFunctions from "./conditions";
 import path from "path";
+import * as database from "./ConditionDatabase";
+import Conditions from "./conditions";
 
 class ConditionHandler {
     readonly name: string = "ConditionHandler";
     private conditions = new Map();
+    public database = database;
 
     constructor(dir: string) {
         const resolvedDir = path.resolve(__dirname, dir);
@@ -27,10 +28,10 @@ class ConditionHandler {
         if (!validConditions) return;
 
         for (const condition of validConditions) {
-            Conditions.get(event)[condition](params)
+            const action = Conditions.get(event)[condition.toLowerCase()];
+            if (!action) continue;
+            action(params);
         }
-        console.log(validConditions);
-        // this.conditions
     }
 }
 

@@ -10,9 +10,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = (bot, message) => __awaiter(void 0, void 0, void 0, function* () {
-    if (message.author.bot === undefined || !message.guild)
+    if (message.author.bot || !message.guild)
         return;
-    yield bot.getComponent("ConditionHandler").handleConditions("message", message.guild.id, message.channel.id);
+    yield bot.getComponent("ConditionHandler").handleConditions("message", message.guild.id, message.channel.id, message);
     if (!message.content.startsWith(bot.prefix))
         return;
     const [commandName, ...args] = message.content
@@ -25,5 +25,5 @@ exports.default = (bot, message) => __awaiter(void 0, void 0, void 0, function* 
     const meetsRequirements = yield command.meetsRequirements(message);
     if (!meetsRequirements)
         return;
-    command.run(message, args);
+    command.run(bot, message, args);
 });

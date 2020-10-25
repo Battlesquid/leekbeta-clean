@@ -1,7 +1,8 @@
 import { Message } from "discord.js";
+import Bot from "./LeekbotClient";
 
 export interface Command {
-    run(message: Message, args?: Array<string>): void
+    run(bot: Bot, message: Message, args?: Array<string>): void
     meetsRequirements(message: Message, additionalArgs?: object): boolean
     usage: string
     permission: number

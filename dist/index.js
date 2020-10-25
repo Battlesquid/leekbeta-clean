@@ -24,7 +24,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const env = __importStar(require("dotenv"));
 env.config({ path: "../.env" });
-const bot_1 = __importDefault(require("./bot"));
-const leekbot = new bot_1.default({ prefix: ";" });
+const LeekbotClient_1 = __importDefault(require("./LeekbotClient"));
+const leekbot = new LeekbotClient_1.default({ prefix: ";" });
 leekbot.loadComponents("components", /^component\.js$/);
 leekbot.init("commands", "events", process.env.TOKEN || "undefined");
