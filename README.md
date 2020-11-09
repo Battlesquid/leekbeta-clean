@@ -1,3 +1,3 @@
 # leekbeta-ts
 
-Repo for the beta version of [https://github.com/Battlesquid/leekbot](leekbot) written in Typescript.
+Repo for the beta version of [leekbot](https://github.com/Battlesquid/leekbot) written in Typescript.
