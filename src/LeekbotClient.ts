@@ -4,8 +4,8 @@ import { Command, BotSettings, RequireDirectoryOptions, RequireDirectoryModules 
 import * as _path from "path";
 
 export default class Bot extends Client {
-    private commands: Collection<string, Command> = new Collection();;
-    private components: Map<string, any> = new Map();
+    private _commands: Collection<string, Command> = new Collection();;
+    private _components: Map<string, any> = new Map();
     readonly prefix: string;
 
     constructor(settings: BotSettings, clientOptions?: ClientOptions) {
@@ -13,49 +13,51 @@ export default class Bot extends Client {
         this.prefix = settings.prefix;
     }
 
-    public init(cmdDir: string, eventsDir: string, token: string) {
+    init(cmdDir: string, eventsDir: string, token: string) {
         if (token === "undefined") return console.log("An invalid token was provided");
-        this.loadCommands(cmdDir);
-        console.log(this.commands);
-        this.loadEvents(eventsDir);
+        this._loadCommands(cmdDir);
+        console.log("Commands:\n", this._commands, "\n");
+        this._loadEvents(eventsDir);
         this.login(token);
     }
 
-    public loadComponents(path: string, match: RegExp | string) {
+    loadComponents(path: string, match: RegExp | string) {
         const components = this.requireDirectory(path, {
             recursive: true,
             filter: match
         })
 
-        for (const [key, value] of Object.entries(components)) {
+        for (const value of Object.values(components)) {
             value.default ?
-                this.components.set(value.default.name, value.default) :
-                this.components.set(value.name, value);
+                this._components.set(value.default.name, value.default) :
+                this._components.set(value.name, value);
         }
-        console.log(this.components);
+        console.log("Components:\n", this._components, "\n");
     }
 
     public getComponent(name: string) {
-        return this.components.get(name);
+        return this._components.get(name);
     }
 
-    private loadCommands(path: string) {
+    private _loadCommands(path: string) {
         const commands = this.requireDirectory(path, {
-            recursive: true
+            recursive: true,
+            filter: /^([A-Za-z]+)(\.js)$/
         });
 
         for (const [name, command] of Object.entries(commands)) {
-            this.commands.set(name, command.default);
+            this._commands.set(name, command.default);
         }
     }
 
     public getCommands(): Collection<string, Command> {
-        return this.commands;
+        return this._commands;
     }
 
-    private loadEvents(path: string) {
+    private _loadEvents(path: string) {
         const events = this.requireDirectory(path, {
-            recursive: true
+            recursive: true,
+            filter: /^([A-Za-z]+)(\.js)$/
         });
 
         for (const [eventName, event] of Object.entries(events)) {

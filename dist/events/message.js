@@ -27,3 +27,4 @@ exports.default = (bot, message) => __awaiter(void 0, void 0, void 0, function* 
         return;
     command.run(bot, message, args);
 });
+//# sourceMappingURL=message.js.map

@@ -4,10 +4,12 @@ import Bot from "../../LeekbotClient";
 export default {
     async run(bot: Bot, message: Message, args: Array<string>) {
         const channelIDs = message.mentions.channels.map(channel => channel.id);
-        if (!channelIDs) return;
-
         const conditionDB = bot.getComponent("ConditionHandler").database;
-        conditionDB.batchAddCondition(message.guild?.id, channelIDs, "locked")
+        for (const channelID of channelIDs) {
+            await conditionDB.addCondition(message.guild?.id, channelID, "locked");
+        }
+
+        message.channel.send(`${message.mentions.channels} is/are image locked.`)
     },
     async meetsRequirements(message: Message): Promise<boolean> {
         const requirements = [

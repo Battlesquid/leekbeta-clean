@@ -28,17 +28,17 @@ const _path = __importStar(require("path"));
 class Bot extends discord_js_1.Client {
     constructor(settings, clientOptions) {
         super(clientOptions);
-        this.commands = new discord_js_1.Collection();
-        this.components = new Map();
+        this._commands = new discord_js_1.Collection();
+        this._components = new Map();
         this.prefix = settings.prefix;
     }
     ;
     init(cmdDir, eventsDir, token) {
         if (token === "undefined")
             return console.log("An invalid token was provided");
-        this.loadCommands(cmdDir);
-        console.log(this.commands);
-        this.loadEvents(eventsDir);
+        this._loadCommands(cmdDir);
+        console.log("Commands:\n", this._commands, "\n");
+        this._loadEvents(eventsDir);
         this.login(token);
     }
     loadComponents(path, match) {
@@ -46,30 +46,32 @@ class Bot extends discord_js_1.Client {
             recursive: true,
             filter: match
         });
-        for (const [key, value] of Object.entries(components)) {
+        for (const value of Object.values(components)) {
             value.default ?
-                this.components.set(value.default.name, value.default) :
-                this.components.set(value.name, value);
+                this._components.set(value.default.name, value.default) :
+                this._components.set(value.name, value);
         }
-        console.log(this.components);
+        console.log("Components:\n", this._components, "\n");
     }
     getComponent(name) {
-        return this.components.get(name);
+        return this._components.get(name);
     }
-    loadCommands(path) {
+    _loadCommands(path) {
         const commands = this.requireDirectory(path, {
-            recursive: true
+            recursive: true,
+            filter: /^([A-Za-z]+)(\.js)$/
         });
         for (const [name, command] of Object.entries(commands)) {
-            this.commands.set(name, command.default);
+            this._commands.set(name, command.default);
         }
     }
     getCommands() {
-        return this.commands;
+        return this._commands;
     }
-    loadEvents(path) {
+    _loadEvents(path) {
         const events = this.requireDirectory(path, {
-            recursive: true
+            recursive: true,
+            filter: /^([A-Za-z]+)(\.js)$/
         });
         for (const [eventName, event] of Object.entries(events)) {
             this.on(eventName, event.default.bind(null, this));
@@ -102,3 +104,4 @@ class Bot extends discord_js_1.Client {
     }
 }
 exports.default = Bot;
+//# sourceMappingURL=LeekbotClient.js.map

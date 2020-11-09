@@ -13,3 +13,4 @@ ConditionBitField.FLAGS = {
     BULLETIN: 1 << 3,
     LOCKED: 1 << 4
 };
+//# sourceMappingURL=ConditionBitField.js.map

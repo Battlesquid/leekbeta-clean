@@ -8,14 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
-const database_1 = __importDefault(require("../../util/database"));
 const Conditions = new Map();
-const database = database_1.default.database;
 Conditions.set("messageReactionAdd", {
     verify(reaction, user) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -26,7 +21,7 @@ Conditions.set("messageReactionAdd", {
                 const memberThatReacted = yield guild.members.fetch(user.id);
                 if (!memberThatReacted)
                     return;
-                const snapshot = yield database_1.default.get("settings", guild.id);
+                const snapshot = yield firestore.get("settings", guild.id);
                 const settings = snapshot.data();
                 if (!settings)
                     return;
@@ -54,7 +49,7 @@ Conditions.set("messageReactionAdd", {
                 const embed = reaction.message.embeds[0];
                 if (!embed)
                     return;
-                const snapshot = yield database_1.default.get("settings", guild.id);
+                const snapshot = yield firestore.get("settings", guild.id);
                 const settings = snapshot.data();
                 if (!settings)
                     return;
@@ -146,16 +141,13 @@ Conditions.set("message", {
         });
     },
     locked(message) {
-        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const snapshot = yield firebase.readDatabaseAt(`${(_a = message.guild) === null || _a === void 0 ? void 0 : _a.id}/image/locked`);
-                const lockedChannels = snapshot.val();
-                //checks if any message posted in a read-only channel has an attachment
-                //if it doesn't, deletes it
-                if (lockedChannels.includes(message.channel.id) &&
-                    !(message.attachments.size > 0) &&
-                    (message.content.length > 0 && /([--:\w?@%&+~#=]*\.[a-z]{2,4}\/{0,2})((?:[?&](?:\w+)=(?:\w+))+|[--:\w?@%&+~#=]+)?/.test(message.content))) {
+                const conditions = [
+                    !/([--:\w?@%&+~#=]*\.[a-z]{2,4}\/{0,2})((?:[?&](?:\w+)=(?:\w+))+|[--:\w?@%&+~#=]+)?/.test(message.content),
+                    message.content.length === 0
+                ];
+                if (conditions.some(Boolean) && message.attachments.size === 0) {
                     message.delete();
                 }
             }
@@ -167,3 +159,4 @@ Conditions.set("message", {
 });
 exports.default = Conditions;
 // indexable, feature that can capture and index messages
+//# sourceMappingURL=conditions.js.map

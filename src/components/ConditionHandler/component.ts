@@ -1,38 +1,27 @@
-import fs from "fs";
-import path from "path";
-import * as database from "./ConditionDatabase";
+import type { Component } from "../types";
+import functions from "./ConditionDatabase";
 import Conditions from "./conditions";
 
-class ConditionHandler {
-    readonly name: string = "ConditionHandler";
-    private conditions = new Map();
-    public database = database;
+class ConditionHandler implements Component {
+    public database = functions;
+    readonly name: string;
 
-    constructor(dir: string) {
-        const resolvedDir = path.resolve(__dirname, dir);
-        const contents = fs.readdirSync(resolvedDir);
-
-        const validConditions =
-            contents.filter(file => file.endsWith(".js"))
-                .map(file => require(`${resolvedDir}/${file.split(".js")[0]}`))
-
-        for (const condition of validConditions) {
-            condition.default ?
-                this.conditions.set(condition.default.name, condition.default) :
-                this.conditions.set(condition.name, condition)
-        }
+    constructor(name: string) {
+        this.name = name;
     }
 
-    public async handleConditions(event: string, guildID: string, channelID: string, ...params: any) {
-        const validConditions = await database.getChannelConditions(guildID, channelID);
+    async handleConditions(event: string, guild: string, channelID: string, ...params: any) {
+        const validConditions = await this.database.getChannelConditions(guild, channelID);
         if (!validConditions) return;
+
+        console.log(validConditions);
 
         for (const condition of validConditions) {
             const action = Conditions.get(event)[condition.toLowerCase()];
             if (!action) continue;
-            action(params);
+            action(...params);
         }
     }
 }
 
-export default new ConditionHandler("conditions");
+export default new ConditionHandler("ConditionHandler");

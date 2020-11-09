@@ -1,5 +1,6 @@
-import * as env from "dotenv";
+import env from "dotenv";
 env.config({ path: "../.env" });
+import "./database/connection"
 
 import Bot from "./LeekbotClient";
 

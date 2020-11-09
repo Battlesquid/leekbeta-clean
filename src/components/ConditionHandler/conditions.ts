@@ -1,10 +1,8 @@
-import { Message, MessageReaction, User, Permissions } from 'discord.js';
-import Bot from '../../LeekbotClient';
-import firestore from "../../util/database"
-
+import type { Message, MessageReaction, User } from 'discord.js';
+import type Bot from '../../LeekbotClient';
+import { Permissions } from "discord.js"
 
 const Conditions = new Map();
-const database = firestore.database;
 
 Conditions.set("messageReactionAdd", {
     async verify(reaction: MessageReaction, user: User) {
@@ -121,17 +119,12 @@ Conditions.set("message", {
     },
     async locked(message: Message) {
         try {
-            const { guild } = message;
-            if (!guild) return;
+            const conditions = [
+                !/([--:\w?@%&+~#=]*\.[a-z]{2,4}\/{0,2})((?:[?&](?:\w+)=(?:\w+))+|[--:\w?@%&+~#=]+)?/.test(message.content),
+                message.content.length === 0
+            ]
 
-            const snapshot = await firestore.get("conditions", guild.id);
-            const lockedChannels = snapshot.val();
-
-            //checks if any message posted in a read-only channel has an attachment
-            //if it doesn't, deletes it
-            if (lockedChannels.includes(message.channel.id) &&
-                !(message.attachments.size > 0) &&
-                (message.content.length > 0 && /([--:\w?@%&+~#=]*\.[a-z]{2,4}\/{0,2})((?:[?&](?:\w+)=(?:\w+))+|[--:\w?@%&+~#=]+)?/.test(message.content))) {
+            if (conditions.some(Boolean) && message.attachments.size === 0) {
                 message.delete();
             }
         } catch (e) { console.log(e); }

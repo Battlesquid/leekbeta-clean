@@ -1,50 +1,65 @@
 import ConditionBitField from "./ConditionBitField";
-import firestore from "../../util/database"
+import { conditions as ConditionModel } from "../../database/models"
 
 const getBitField = async (guild: string, channel: string): Promise<ConditionBitField> => {
-    const snapshot = await firestore.get("conditions", guild);
+    const data = await ConditionModel
+        .findOne({ "guild": guild })
+    const bits = data?.channels.find(ch => ch.id === channel)?.bitfield;
 
-    const bits = snapshot.data()?.[channel] || 0;
-    const bitfield = new ConditionBitField(bits);
-
-    return bitfield;
+    return new ConditionBitField(bits || 0)
 }
 
-export const getChannelConditions = async (guild: string, channel: string): Promise<Array<string> | undefined> => {
-    const snapshot = await firestore.get("conditions", guild);
-
-    const bits: number = snapshot.data()?.[channel];
-
-    const bitfield = new ConditionBitField(bits);
+const getChannelConditions = async (guild: string, channel: string): Promise<Array<string> | undefined> => {
+    const bitfield = await getBitField(guild, channel);
     const serializedField = bitfield.serialize();
 
     return Object.keys(serializedField).filter(key => serializedField[key]);
 }
 
-export const addCondition = async (guild: string, channel: string, condition: string): Promise<void> => {
+const addCondition = async (guild: string, channel: string, condition: string): Promise<void> => {
     const bits = await getBitField(guild, channel);
     bits.add(ConditionBitField.FLAGS[condition.toUpperCase()]);
-    await firestore.set("conditions", guild, { [channel]: bits.bitfield })
-}
 
-export const batchAddCondition = async (guild: string, channels: Array<string>, condition: string) => {
-    const data: { [key: string]: number } = {};
-    for (const channel of channels) {
-        const bits = await getBitField(guild, channel);
-        bits.add(ConditionBitField.FLAGS[condition.toUpperCase()]);
-        data[channel] = bits.bitfield;
+    const doc = await ConditionModel
+        .findOne({ guild: guild })
+
+    if (doc) {
+        const existingConditions = doc.channels.find(ch => ch.id === channel);
+        if (existingConditions) {
+
+            const index = doc.channels.indexOf(existingConditions);
+            doc.channels[index].bitfield = bits.bitfield;
+
+        } else {
+            doc.channels.push({ id: channel, bitfield: bits.bitfield })
+        }
+
+        await doc.save();
+
+    } else {
+        const conditions = new ConditionModel({
+            guild: guild,
+            channels: [{ id: channel, bitfield: bits.bitfield }]
+        })
+        await conditions.save();
     }
-    firestore.set("conditions", guild, data)
 }
 
-export const removeCondition = async (guild: string, channel: string, condition: string): Promise<void> => {
+const batchAddCondition = async (guild: string, channels: Array<string>, condition: string): Promise<void> => {
+
+}
+
+const batchRemoveCondition = async (guild: string, channels: Array<string>, condition: string): Promise<void> => {
+
+}
+
+const removeCondition = async (guild: string, channel: string, condition: string): Promise<void> => {
     if (!ConditionBitField.FLAGS[condition.toLowerCase()]) return;
 
     const bits = await getBitField(guild, channel)
     bits.remove(ConditionBitField.FLAGS[condition.toUpperCase()])
+    
 
-    if (bits.bitfield !== 0)
-        await firestore.set("conditions", guild, { [channel]: bits.bitfield })
-    else
-        await firestore.remove("conditions", guild, channel)
 }
+
+export default { getChannelConditions, addCondition, batchAddCondition, removeCondition, batchRemoveCondition }

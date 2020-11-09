@@ -15,10 +15,11 @@ exports.default = {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
             const channelIDs = message.mentions.channels.map(channel => channel.id);
-            if (!channelIDs)
-                return;
             const conditionDB = bot.getComponent("ConditionHandler").database;
-            conditionDB.batchAddCondition((_a = message.guild) === null || _a === void 0 ? void 0 : _a.id, channelIDs, "locked");
+            for (const channelID of channelIDs) {
+                yield conditionDB.addCondition((_a = message.guild) === null || _a === void 0 ? void 0 : _a.id, channelID, "locked");
+            }
+            message.channel.send(`${message.mentions.channels} is/are image locked.`);
         });
     },
     meetsRequirements(message) {
@@ -34,3 +35,4 @@ exports.default = {
     usage: "...<#channels>",
     permission: discord_js_1.Permissions.FLAGS.MANAGE_CHANNELS
 };
+//# sourceMappingURL=lock.js.map

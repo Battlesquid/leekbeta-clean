@@ -12,46 +12,53 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.removeCondition = exports.batchAddCondition = exports.addCondition = exports.getChannelConditions = void 0;
 const ConditionBitField_1 = __importDefault(require("./ConditionBitField"));
-const database_1 = __importDefault(require("../../util/database"));
+const models_1 = require("../../database/models");
 const getBitField = (guild, channel) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const snapshot = yield database_1.default.get("conditions", guild);
-    const bits = ((_a = snapshot.data()) === null || _a === void 0 ? void 0 : _a[channel]) || 0;
-    const bitfield = new ConditionBitField_1.default(bits);
-    return bitfield;
+    const data = yield models_1.conditions
+        .findOne({ "guild": guild });
+    const bits = (_a = data === null || data === void 0 ? void 0 : data.channels.find(ch => ch.id === channel)) === null || _a === void 0 ? void 0 : _a.bitfield;
+    return new ConditionBitField_1.default(bits || 0);
 });
-exports.getChannelConditions = (guild, channel) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b;
-    const snapshot = yield database_1.default.get("conditions", guild);
-    const bits = (_b = snapshot.data()) === null || _b === void 0 ? void 0 : _b[channel];
-    const bitfield = new ConditionBitField_1.default(bits);
+const getChannelConditions = (guild, channel) => __awaiter(void 0, void 0, void 0, function* () {
+    const bitfield = yield getBitField(guild, channel);
     const serializedField = bitfield.serialize();
     return Object.keys(serializedField).filter(key => serializedField[key]);
 });
-exports.addCondition = (guild, channel, condition) => __awaiter(void 0, void 0, void 0, function* () {
+const addCondition = (guild, channel, condition) => __awaiter(void 0, void 0, void 0, function* () {
     const bits = yield getBitField(guild, channel);
     bits.add(ConditionBitField_1.default.FLAGS[condition.toUpperCase()]);
-    yield database_1.default.set("conditions", guild, { [channel]: bits.bitfield });
-});
-exports.batchAddCondition = (guild, channels, condition) => __awaiter(void 0, void 0, void 0, function* () {
-    const data = {};
-    for (const channel of channels) {
-        console.log(channel);
-        const bits = yield getBitField(guild, channel);
-        bits.add(ConditionBitField_1.default.FLAGS[condition.toUpperCase()]);
-        data[channel] = bits.bitfield;
+    const doc = yield models_1.conditions
+        .findOne({ guild: guild });
+    if (doc) {
+        const existingConditions = doc.channels.find(ch => ch.id === channel);
+        if (existingConditions) {
+            const index = doc.channels.indexOf(existingConditions);
+            doc.channels[index].bitfield = bits.bitfield;
+        }
+        else {
+            doc.channels.push({ id: channel, bitfield: bits.bitfield });
+        }
+        yield doc.save();
     }
-    database_1.default.set("conditions", guild, data);
+    else {
+        const conditions = new models_1.conditions({
+            guild: guild,
+            channels: [{ id: channel, bitfield: bits.bitfield }]
+        });
+        yield conditions.save();
+    }
 });
-exports.removeCondition = (guild, channel, condition) => __awaiter(void 0, void 0, void 0, function* () {
+const batchAddCondition = (guild, channels, condition) => __awaiter(void 0, void 0, void 0, function* () {
+});
+const batchRemoveCondition = (guild, channels, condition) => __awaiter(void 0, void 0, void 0, function* () {
+});
+const removeCondition = (guild, channel, condition) => __awaiter(void 0, void 0, void 0, function* () {
     if (!ConditionBitField_1.default.FLAGS[condition.toLowerCase()])
         return;
     const bits = yield getBitField(guild, channel);
     bits.remove(ConditionBitField_1.default.FLAGS[condition.toUpperCase()]);
-    if (bits.bitfield !== 0)
-        yield database_1.default.set("conditions", guild, { [channel]: bits.bitfield });
-    else
-        yield database_1.default.remove("conditions", guild, channel);
 });
+exports.default = { getChannelConditions, addCondition, batchAddCondition, removeCondition, batchRemoveCondition };
+//# sourceMappingURL=ConditionDatabase.js.map
