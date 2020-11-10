@@ -1,4 +1,4 @@
-import { Component } from "../../classes/Component";
+import { Component } from "../types";
 
 class GuildSettings implements Component {
     readonly name: string;
