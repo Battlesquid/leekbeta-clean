@@ -1,10 +1,11 @@
 import { Message, Permissions } from "discord.js";
-import Bot from "../../LeekbotClient";
+import Bot from "../../client/LeekbotClient";
 
 export default {
-    async run(bot: Bot, message: Message, args: Array<string>) {
+    async run(bot: Bot, message: Message) {
         const channelIDs = message.mentions.channels.map(channel => channel.id);
         const conditionDB = bot.getComponent("ConditionHandler").database;
+        
         for (const channelID of channelIDs) {
             await conditionDB.addCondition(message.guild?.id, channelID, "locked");
         }

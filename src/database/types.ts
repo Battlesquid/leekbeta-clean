@@ -12,9 +12,15 @@ interface SettingsDoc extends mongoose.Document {
     roles?: mongoose.Schema<{ bulletin: string }>
 }
 
+type SettingTypes = "verification" | "images" | "roles";
+
+type Settings<T> = {
+    [key in SettingTypes]: T
+
+}
 interface ConditionsDoc extends mongoose.Document {
     guild: string,
     channels: Array<{ id: string, bitfield: number }>
 }
 
-export type { SettingsDoc, ConditionsDoc }
+export type { SettingsDoc, ConditionsDoc, SettingTypes }

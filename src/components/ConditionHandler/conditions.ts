@@ -1,5 +1,5 @@
 import type { Message, MessageReaction, User } from 'discord.js';
-import type Bot from '../../LeekbotClient';
+import type Bot from '../../client/LeekbotClient';
 import { Permissions } from "discord.js"
 
 const Conditions = new Map();

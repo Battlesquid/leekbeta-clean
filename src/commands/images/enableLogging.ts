@@ -1,11 +1,17 @@
 import type { Message } from "discord.js";
-import type Bot from "../../LeekbotClient";
+import type Bot from "../../client/LeekbotClient";
 import { Permissions } from "discord.js";
 
 export default {
     async run(bot: Bot, message: Message) {
         const requestedChannel = message.mentions.channels.first();
-        
+        if (!requestedChannel) return;
+
+        bot.getComponent("Settings")
+            .addOrUpdateSetting("images", message.guild?.id, {
+                logger: requestedChannel.id
+            })
+
     },
     async meetsRequirements(message: Message): Promise<boolean> {
         const requirements = [
